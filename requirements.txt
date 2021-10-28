@@ -1,7 +1,7 @@
 numpy
 gym
-keras
+ale-py
 matplotlib
 opencv-python
 tensorflow-gpu
-PIL
+pyglet

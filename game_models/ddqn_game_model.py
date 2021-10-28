@@ -52,8 +52,6 @@ class DDQNSolver(DDQNGameModel):
                                testing_model_path)
 
     def move(self, state):
-        if np.random.rand() < EXPLORATION_TEST:
-            return random.randrange(self.action_space)
         q_values = self.ddqn.predict(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), batch_size=1)
         return np.argmax(q_values[0])
 
@@ -141,7 +139,7 @@ class DDQNTrainer(DDQNGameModel):
                             batch_size=BATCH_SIZE,
                             verbose=0)
         loss = fit.history["loss"][0]
-        accuracy = fit.history["acc"][0]
+        accuracy = fit.history["accuracy"][0]
         return loss, accuracy, mean(max_q_values)
 
     def _update_epsilon(self):

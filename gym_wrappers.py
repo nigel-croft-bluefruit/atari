@@ -193,3 +193,20 @@ class MainGymWrapper():
         env = FrameStack(env, 4)
         # env = ClippedRewardsWrapper(env)
         return env
+
+class FilterActionsEnv(gym.Wrapper):
+    def __init__(self, env, actions):
+        """ Only allow certain actions on environment.
+            For example SpaceInvaders offers 18 actions
+            but only 6 of them are really valid
+
+            Example:
+            env = FilterActionsEnv(env, ['NOOP', 'FIRE', 'RIGHT', 'LEFT','RIGHTFIRE', 'LEFTFIRE'])
+        """
+        super(FilterActionsEnv, self).__init__(env)
+        self._action_conversions = np.nonzero(np.isin(env.unwrapped.get_action_meanings(), actions))[0]
+        self.action_space = spaces.Discrete(len(actions))
+
+
+    def step(self, action):
+        return self.env.step(self._action_conversions[action])
