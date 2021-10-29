@@ -1,7 +1,7 @@
-numpy
+numpy==1.19.2
 gym
 ale-py
 matplotlib
 opencv-python
-tensorflow-gpu
+tensorflow
 pyglet
