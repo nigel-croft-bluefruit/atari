@@ -53,7 +53,9 @@ class DDQNSolver(DDQNGameModel):
                                testing_model_path)
 
     def move(self, state):
-        q_values = self.ddqn.predict(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), batch_size=1)
+        state = np.asarray(state).astype(np.float64)
+        state = np.moveaxis(state, 0, -1) #move channels to end
+        q_values = self.ddqn.predict(np.expand_dims(state, axis=0), batch_size=1)
         return np.argmax(q_values[0])
 
 
@@ -80,7 +82,11 @@ class DDQNTrainer(DDQNGameModel):
     def move(self, state):
         if np.random.rand() < self.epsilon or len(self.memory) < REPLAY_START_SIZE:
             return random.randrange(self.action_space)
-        q_values = self.ddqn.predict(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), batch_size=1)
+
+        state = np.asarray(state).astype(np.float64)
+        state = np.moveaxis(state, 0, -1) #move channels to end
+        q_values = self.ddqn.predict(np.expand_dims(state, axis=0), batch_size=1)
+
         return np.argmax(q_values[0])
 
     def remember(self, current_state, action, reward, next_state, terminal):
@@ -121,9 +127,13 @@ class DDQNTrainer(DDQNGameModel):
         input_states = np.array([
             np.asarray(entry["current_state"]).astype(np.float64) for entry in batch
         ])
+        input_states = np.moveaxis(input_states, 1, -1)
+
         next_input_states = np.array([
             np.asarray(entry["next_state"]).astype(np.float64) for entry in batch
         ])
+        next_input_states = np.moveaxis(next_input_states, 1, -1)
+
         terminal_inputs = np.array([
             not entry['terminal'] for entry in batch
         ], dtype=int)
@@ -135,12 +145,12 @@ class DDQNTrainer(DDQNGameModel):
         target_q = np.copy(current_q)
 
         indexes = np.arange(input_states.shape[0])
-        target_q[indexes, actions[indexes]] = rewards + terminal_inputs * GAMMA * max_next_q
+        target_q[indexes, actions[indexes]] = rewards + (terminal_inputs * GAMMA * max_next_q)
 
         result = self.ddqn.fit(x=input_states, y=target_q, verbose=0)
         loss = result.history["loss"][0]
         accuracy = result.history["accuracy"][0]
-        return loss, accuracy, 0
+        return loss, accuracy, np.amax(next_q)
 
 
     # def _train(self):

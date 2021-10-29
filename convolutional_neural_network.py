@@ -12,22 +12,19 @@ class ConvolutionalNeuralNetwork:
                               strides=(4, 4),
                               padding="valid",
                               activation="relu",
-                              input_shape=input_shape,
-                              data_format="channels_first"))
+                              input_shape=input_shape))
         self.model.add(Conv2D(64,
                               4,
                               strides=(2, 2),
                               padding="valid",
                               activation="relu",
-                              input_shape=input_shape,
-                              data_format="channels_first"))
+                              input_shape=input_shape))
         self.model.add(Conv2D(64,
                               3,
                               strides=(1, 1),
                               padding="valid",
                               activation="relu",
-                              input_shape=input_shape,
-                              data_format="channels_first"))
+                              input_shape=input_shape))
         self.model.add(Flatten())
         self.model.add(Dense(512, activation="relu"))
         self.model.add(Dense(action_space))

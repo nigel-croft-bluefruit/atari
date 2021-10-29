@@ -7,7 +7,7 @@ from gym_wrappers import MainGymWrapper, FilterActionsEnv
 
 FRAMES_IN_OBSERVATION = 4
 FRAME_SIZE = 84
-INPUT_SHAPE = (FRAMES_IN_OBSERVATION, FRAME_SIZE, FRAME_SIZE)
+INPUT_SHAPE = (FRAME_SIZE, FRAME_SIZE, FRAMES_IN_OBSERVATION)
 
 
 class Atari:
@@ -64,7 +64,7 @@ class Atari:
         parser = argparse.ArgumentParser()
         available_games = ['SpaceInvaders'] #list((''.join(x.capitalize() or '_' for x in word.split('_')) for word in atari_py.list_games()))
         parser.add_argument("-g", "--game", help="Choose from available games: " + str(available_games) + ". Default is 'SpaceInvaders'.", default="SpaceInvaders")
-        parser.add_argument("-m", "--mode", help="Choose from available modes: ddqn_train, ddqn_test, ge_train, ge_test. Default is 'ddqn_test'.", default="ddqn_test")
+        parser.add_argument("-m", "--mode", help="Choose from available modes: ddqn_train, ddqn_test, ge_train, ge_test. Default is 'ddqn_test'.", default="ddqn_train")
         parser.add_argument("-r", "--render", help="Choose if the game should be rendered. Default is 'False'.", default=False, type=bool)
         parser.add_argument("-tsl", "--total_step_limit", help="Choose how many total steps (frames visible by agent) should be performed. Default is '5000000'.", default=5000000, type=int)
         parser.add_argument("-trl", "--total_run_limit", help="Choose after how many runs we should stop. Default is None (no limit).", default=None, type=int)
