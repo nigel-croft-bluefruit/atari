@@ -5,6 +5,7 @@ import shutil
 from statistics import mean
 from game_models.base_game_model import BaseGameModel
 from convolutional_neural_network import ConvolutionalNeuralNetwork
+import time
 
 GAMMA = 0.99
 MEMORY_SIZE = 900000
@@ -96,7 +97,9 @@ class DDQNTrainer(DDQNGameModel):
             return
 
         if total_step % TRAINING_FREQUENCY == 0:
-            loss, accuracy, average_max_q = self._train()
+            # start = time.time()
+            loss, accuracy, average_max_q = self._train(np.asarray(random.sample(self.memory, BATCH_SIZE)))
+            # print(f"Training time: {time.time() - start}s")
             self.logger.add_loss(loss)
             self.logger.add_accuracy(accuracy)
             self.logger.add_q(average_max_q)
@@ -111,36 +114,68 @@ class DDQNTrainer(DDQNGameModel):
             print('{{"metric": "epsilon", "value": {}}}'.format(self.epsilon))
             print('{{"metric": "total_step", "value": {}}}'.format(total_step))
 
-    def _train(self):
-        batch = np.asarray(random.sample(self.memory, BATCH_SIZE))
-        if len(batch) < BATCH_SIZE:
-            return
 
-        current_states = []
-        q_values = []
-        max_q_values = []
+    def _train(self, batch):
+        actions = np.array([entry['action'] for entry in batch])
+        rewards = np.array([entry['reward'] for entry in batch])
+        input_states = np.array([
+            np.asarray(entry["current_state"]).astype(np.float64) for entry in batch
+        ])
+        next_input_states = np.array([
+            np.asarray(entry["next_state"]).astype(np.float64) for entry in batch
+        ])
+        terminal_inputs = np.array([
+            not entry['terminal'] for entry in batch
+        ], dtype=int)
 
-        for entry in batch:
-            current_state = np.expand_dims(np.asarray(entry["current_state"]).astype(np.float64), axis=0)
-            current_states.append(current_state)
-            next_state = np.expand_dims(np.asarray(entry["next_state"]).astype(np.float64), axis=0)
-            next_state_prediction = self.ddqn_target.predict(next_state).ravel()
-            next_q_value = np.max(next_state_prediction)
-            q = list(self.ddqn.predict(current_state)[0])
-            if entry["terminal"]:
-                q[entry["action"]] = entry["reward"]
-            else:
-                q[entry["action"]] = entry["reward"] + GAMMA * next_q_value
-            q_values.append(q)
-            max_q_values.append(np.max(q))
+        current_q = self.ddqn.predict(input_states)
+        next_q = self.ddqn_target.predict(next_input_states)
+        max_next_q = np.amax(next_q, axis=1)
 
-        fit = self.ddqn.fit(np.asarray(current_states).squeeze(),
-                            np.asarray(q_values).squeeze(),
-                            batch_size=BATCH_SIZE,
-                            verbose=0)
-        loss = fit.history["loss"][0]
-        accuracy = fit.history["accuracy"][0]
-        return loss, accuracy, mean(max_q_values)
+        target_q = np.copy(current_q)
+
+        indexes = np.arange(input_states.shape[0])
+        target_q[indexes, actions[indexes]] = rewards + terminal_inputs * GAMMA * max_next_q
+
+        result = self.ddqn.fit(x=input_states, y=target_q, verbose=0)
+        loss = result.history["loss"][0]
+        accuracy = result.history["accuracy"][0]
+        return loss, accuracy, 0
+
+
+    # def _train(self):
+    #     batch = np.asarray(random.sample(self.memory, BATCH_SIZE))
+    #     if len(batch) < BATCH_SIZE:
+    #         return
+
+    #     current_states = []
+    #     q_values = []
+    #     max_q_values = []
+
+    #     for entry in batch:
+    #         current_state = np.expand_dims(np.asarray(entry["current_state"]).astype(np.float64), axis=0)
+    #         current_states.append(current_state)
+    #         next_state = np.expand_dims(np.asarray(entry["next_state"]).astype(np.float64), axis=0)
+    #         next_state_prediction = self.ddqn_target.predict(next_state).ravel()
+    #         next_q_value = np.max(next_state_prediction)
+    #         q = list(self.ddqn.predict(current_state)[0])
+    #         if entry["terminal"]:
+    #             q[entry["action"]] = entry["reward"]
+    #         else:
+    #             q[entry["action"]] = entry["reward"] + GAMMA * next_q_value
+    #         q_values.append(q)
+    #         max_q_values.append(np.max(q))
+
+    #     x = np.expand_dims(np.asarray(current_states), axis=0)
+    #     y = np.asarray(q_values).squeeze()
+
+    #     fit = self.ddqn.fit(np.asarray(current_states).squeeze(),
+    #                         np.asarray(q_values).squeeze(),
+    #                         batch_size=BATCH_SIZE,
+    #                         verbose=0)
+    #     loss = fit.history["loss"][0]
+    #     accuracy = fit.history["accuracy"][0]
+    #     return loss, accuracy, mean(max_q_values)
 
     def _update_epsilon(self):
         self.epsilon -= EXPLORATION_DECAY
