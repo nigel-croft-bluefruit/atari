@@ -6,6 +6,7 @@ import shutil
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import time
 
 TRAINING_UPDATE_FREQUENCY = 1000
 RUN_UPDATE_FREQUENCY = 10
@@ -25,10 +26,14 @@ class Logger:
         self.loss = Stat("update", "loss", TRAINING_UPDATE_FREQUENCY, directory_path, header)
         self.accuracy = Stat("update", "accuracy", TRAINING_UPDATE_FREQUENCY, directory_path, header)
         self.q = Stat("update", "q", TRAINING_UPDATE_FREQUENCY, directory_path, header)
+        self.start = time.time()
 
     def add_run(self, run):
         if run % RUN_UPDATE_FREQUENCY == 0:
             print('{{"metric": "run", "value": {}}}'.format(run))
+            print(f"Time for {RUN_UPDATE_FREQUENCY} runs: {time.time() - self.start:.0f}s")
+            self.start = time.time()
+
 
     def add_score(self, score):
         self.score.add_entry(score)

@@ -53,7 +53,7 @@ class DDQNSolver(DDQNGameModel):
                                testing_model_path)
 
     def move(self, state):
-        q_values = self.ddqn.predict(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), batch_size=1)
+        q_values = self.ddqn(np.expand_dims(np.asarray(state).astype(np.float64), axis=0))
         return np.argmax(q_values[0])
 
 
@@ -80,7 +80,7 @@ class DDQNTrainer(DDQNGameModel):
     def move(self, state):
         if np.random.rand() < self.epsilon or len(self.memory) < REPLAY_START_SIZE:
             return random.randrange(self.action_space)
-        q_values = self.ddqn.predict(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), batch_size=1)
+        q_values = self.ddqn(np.expand_dims(np.asarray(state).astype(np.float64), axis=0))
         return np.argmax(q_values[0])
 
     def remember(self, current_state, action, reward, next_state, terminal):
@@ -128,8 +128,8 @@ class DDQNTrainer(DDQNGameModel):
             not entry['terminal'] for entry in batch
         ], dtype=int)
 
-        current_q = self.ddqn.predict(input_states)
-        next_q = self.ddqn_target.predict(next_input_states)
+        current_q = self.ddqn(input_states)
+        next_q = self.ddqn_target(next_input_states)
         max_next_q = np.amax(next_q, axis=1)
 
         target_q = np.copy(current_q)
