@@ -55,7 +55,7 @@ class DDQNSolver(DDQNGameModel):
     def move(self, state):
         state = np.asarray(state).astype(np.float64)
         state = np.moveaxis(state, 0, -1) #move channels to end
-        q_values = self.ddqn.predict(np.expand_dims(state, axis=0), batch_size=1)
+        q_values = self.ddqn(np.expand_dims(state, axis=0))
         return np.argmax(q_values[0])
 
 
@@ -85,7 +85,7 @@ class DDQNTrainer(DDQNGameModel):
 
         state = np.asarray(state).astype(np.float64)
         state = np.moveaxis(state, 0, -1) #move channels to end
-        q_values = self.ddqn.predict(np.expand_dims(state, axis=0), batch_size=1)
+        q_values = self.ddqn(np.expand_dims(state, axis=0))
 
         return np.argmax(q_values[0])
 
@@ -138,8 +138,8 @@ class DDQNTrainer(DDQNGameModel):
             not entry['terminal'] for entry in batch
         ], dtype=int)
 
-        current_q = self.ddqn.predict(input_states)
-        next_q = self.ddqn_target.predict(next_input_states)
+        current_q = self.ddqn(input_states)
+        next_q = self.ddqn_target(next_input_states)
         max_next_q = np.amax(next_q, axis=1)
 
         target_q = np.copy(current_q)
