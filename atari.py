@@ -14,13 +14,17 @@ class Atari:
 
     def __init__(self):
         game_name, game_mode, render, total_step_limit, total_run_limit, clip = self._args()
-        #env_name = game_name + "Deterministic-v4"  # Handles frame skipping (4) at every iteration
+        env_name = f"ALE/{game_name}-v5"  # Handles frame skipping (4) at every iteration
         if render:
-            env = MainGymWrapper.wrap(gym.make('ALE/SpaceInvaders-v5', render_mode='human'))
+            env = MainGymWrapper.wrap(gym.make(env_name, render_mode='human'))
         else:
-            env = MainGymWrapper.wrap(gym.make('ALE/SpaceInvaders-v5'))
+            env = MainGymWrapper.wrap(gym.make(env_name))
 
-        env = FilterActionsEnv(env, ['NOOP', 'FIRE', 'RIGHT', 'LEFT','RIGHTFIRE', 'LEFTFIRE'])
+        if game_name == "SpaceInvaders":
+            env = FilterActionsEnv(env, ['NOOP', 'FIRE', 'RIGHT', 'LEFT','RIGHTFIRE', 'LEFTFIRE'])
+
+        if game_name == "Breakout":
+            env = FilterActionsEnv(env, ['NOOP', 'FIRE', 'RIGHT', 'LEFT'])
 
         self._main_loop(self._game_model(game_mode, game_name, env.action_space.n), env, render, total_step_limit, total_run_limit, clip)
 
